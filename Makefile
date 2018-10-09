@@ -26,9 +26,6 @@ TEST_CSV=data/check_${DATASET_NAME}/test.csv
 PREDICTIONS_CSV=predictions/check_${DATASET_NAME}.csv
 MODEL_DIR=models/check_${DATASET_NAME}
 
-SUBMISSION_TIME=$(shell date '+%Y%m%d_%H%M%S')
-SUBMISSION_FILE=submission_${SUBMISSION_TIME}.zip
-
 DOCKER_RUN=docker run --rm -it -v ${PWD}:/app -w /app ${IMAGE}
 
 download:
@@ -56,4 +53,4 @@ run-jupyter:
 	docker run --rm -it -v ${PWD}:/app -w /app -p 8888:8888 ${IMAGE} jupyter notebook --ip=0.0.0.0 --no-browser --allow-root  --NotebookApp.token='' --NotebookApp.password=''
 
 submission:
-	${DOCKER_RUN} /bin/bash -c "sed -i.bak 's~{image}~${IMAGE}~g' metadata.json && zip -9 -r submissions/${SUBMISSION_FILE} main.py lib/*.py metadata.json && mv metadata.json.bak metadata.json"
+	${DOCKER_RUN} /bin/bash -c "sed -i.bak 's~{image}~${IMAGE}~g' metadata.json && zip -9 -r submissions/submission_`date '+%Y%m%d_%H%M%S'`.zip main.py lib/*.py metadata.json && mv metadata.json.bak metadata.json"
