@@ -1,0 +1,8 @@
+{
+    "image": "{image}",
+    "entry_points": {
+        "train_classification": "python3 main.py --mode classification --train-csv {train_csv} --model-dir {model_dir}",
+        "train_regression": "python3 main.py --mode regression --train-csv {train_csv} --model-dir {model_dir}",
+        "predict": "python3 main.py --test-csv {test_csv} --prediction-csv {prediction_csv} --model-dir {model_dir}"
+    }
+}
