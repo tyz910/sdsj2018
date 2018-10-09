@@ -1,6 +1,5 @@
 import pandas as pd
 import datetime
-from sklearn import preprocessing
 from lib.util import timeit, log
 from typing import Dict
 
@@ -74,7 +73,7 @@ def transform_categorical(df: pd.DataFrame, config: Dict):
     if "categorical_columns" not in config:
         config["categorical_columns"] = {}
         for c in [c for c in df if c.startswith("string_")]:
-            config["categorical_columns"][c] = preprocessing.LabelEncoder().fit(df[c])
+            config["categorical_columns"][c] = {v: i for i, v in enumerate(df[c].value_counts().to_dict())}
 
-    for c, encoder in config["categorical_columns"].items():
-        df[c] = encoder.transform(df[c])
+    for c, values in config["categorical_columns"].items():
+        df.loc[:, c] = df[c].apply(lambda x: values[x] if x in values else -1)

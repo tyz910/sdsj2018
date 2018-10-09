@@ -33,8 +33,8 @@ train:
 predict:
 	docker run --rm -it -v ${PWD}:/app -w /app ${IMAGE} python3 main.py --test-csv ${TEST_CSV} --prediction-csv ${PREDICTIONS_CSV} --model-dir ${MODEL_DIR}
 
-validate:
-	docker run --rm -it -v ${PWD}:/app -w /app ${IMAGE} python3 validate.py
+score:
+	docker run --rm -it -v ${PWD}:/app -w /app ${IMAGE} python3 score.py
 
 docker-build:
 	docker build -t ${IMAGE} . && (docker ps -q -f status=exited | xargs docker rm) && (docker images -qf dangling=true | xargs docker rmi) && docker images

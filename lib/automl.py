@@ -1,10 +1,13 @@
 import os
 import time
 import pickle
+import pandas as pd
+import numpy as np
 from lib.util import timeit
 from lib.read import read_df
 from lib.preprocess import preprocess
 from lib.model import train, predict, validate
+from typing import Optional
 
 
 class AutoML:
@@ -25,7 +28,7 @@ class AutoML:
         preprocess(X, self.config)
         train(X, y, self.config)
 
-    def predict(self, test_csv: str, prediction_csv: str):
+    def predict(self, test_csv: str, prediction_csv: str) -> (pd.DataFrame, Optional[np.float64]):
         X = read_df(test_csv, self.config)
         result = X[["line_id"]].copy()
 
@@ -35,7 +38,11 @@ class AutoML:
 
         target_csv = test_csv.replace("test", "test-target")
         if os.path.exists(target_csv):
-            validate(result, target_csv, self.config["mode"])
+            score = validate(result, target_csv, self.config["mode"])
+        else:
+            score = None
+
+        return result, score
 
     @timeit
     def save(self):

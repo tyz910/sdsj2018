@@ -7,6 +7,7 @@
 `make download` - cкачать датасет в папку data.  
 `make train DATASET=1` - обучение модели на датасете с указанным номером [1-8].  
 `make predict DATASET=1` - валидация модели на датасете с указанным номером [1-8].  
+`make score` - валидация модели на всех датасетах и сохранение результата в папку scores.  
 `make docker-build` - сборка Docker-образа.  
 `make docker-push` - залить Docker-образ на Docker Hub.  
 `make run-bash` - запустить терминал в Docker-контейнере.  

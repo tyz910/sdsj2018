@@ -17,11 +17,12 @@ def predict(X: pd.DataFrame, config: Dict) -> List:
 
 
 @timeit
-def validate(preds: pd.DataFrame, target_csv: str, mode: str):
+def validate(preds: pd.DataFrame, target_csv: str, mode: str) -> np.float64:
     df = pd.merge(preds, pd.read_csv(target_csv), on="line_id", left_index=True)
     score = roc_auc_score(df.target.values, df.prediction.values) if mode == "classification" else \
         np.sqrt(mean_squared_error(df.target.values, df.prediction.values))
     log("Score: {:0.4f}".format(score))
+    return score
 
 
 @timeit
