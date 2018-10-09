@@ -24,6 +24,6 @@
 ## Запуск на Windows (в процессе)
 
 1. Установить [Docker](https://download.docker.com/win/stable/Docker%20for%20Windows%20Installer.exe).
-2. Установить [Make](https://download.docker.com/win/stable/Docker%20for%20Windows%20Installer.exe). И добавить его в Path.
+2. Установить [Make](https://download.docker.com/win/stable/Docker%20for%20Windows%20Installer.exe). И добавить его в [PATH](https://ru.stackoverflow.com/questions/153628/Как-добавить-путь-в-переменную-окружения-path-на-windows).
 3. Запустить Docker. В настройках выделить докеру нужное количество оперативной памяти.
 4. Запустить PowerShell от имени администратора. При выполнении make-комманд дать разрешение на монтирование директории для докера.
