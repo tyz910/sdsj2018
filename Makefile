@@ -14,7 +14,7 @@ endif
 
 DATASET_MODE=_c
 ifeq ($(DATASET), $(filter $(DATASET), 1 2 3))
-  DATASET_MODE=_r
+	DATASET_MODE=_r
 endif
 
 DATASET_NAME=${DATASET}${DATASET_MODE}
