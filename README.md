@@ -21,7 +21,7 @@
 3. Запустить сборку образа `make docker-build`.
 4. Залить Docker-образ на Docker Hub `make docker-push`.
 
-## Запуск на Windows (в процессе)
+## Запуск на Windows
 
 1. Установить [Docker](https://download.docker.com/win/stable/Docker%20for%20Windows%20Installer.exe).
 2. Установить [Make](https://download.docker.com/win/stable/Docker%20for%20Windows%20Installer.exe). И добавить его в [PATH](https://ru.stackoverflow.com/questions/153628/Как-добавить-путь-в-переменную-окружения-path-на-windows).

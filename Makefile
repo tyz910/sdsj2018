@@ -12,7 +12,11 @@ ifeq ($(DATASET),)
 	DATASET=1
 endif
 
-DATASET_MODE=$(shell ls -la ./data | grep "check_${DATASET}_*" | grep -o "_[rc]")
+DATASET_MODE=_c
+ifeq ($(DATASET), $(filter $(DATASET), 1 2 3))
+  DATASET_MODE=_r
+endif
+
 DATASET_NAME=${DATASET}${DATASET_MODE}
 
 ifeq ($(DATASET_MODE), _r)
