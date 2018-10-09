@@ -1,4 +1,5 @@
 IMAGE=tyz910/sdsj2018
+DOWNLOAD_URL=https://s3.eu-central-1.amazonaws.com/sdsj2018-automl/public/sdsj2018_automl_check_datasets.zip
 
 ifeq ($(OS), Windows_NT)
 	PWD=${CURDIR}
@@ -28,19 +29,19 @@ MODEL_DIR=models/check_${DATASET_NAME}
 SUBMISSION_TIME=$(shell date '+%Y%m%d_%H%M%S')
 SUBMISSION_FILE=submission_${SUBMISSION_TIME}.zip
 
-DOWNLOAD_URL=https://s3.eu-central-1.amazonaws.com/sdsj2018-automl/public/sdsj2018_automl_check_datasets.zip
+DOCKER_RUN=docker run --rm -it -v ${PWD}:/app -w /app ${IMAGE}
 
 download:
-	docker run --rm -it -v ${PWD}:/app -w /app ${IMAGE} /bin/bash -c "test -f ${TRAIN_CSV} || (cd data && curl ${DOWNLOAD_URL} > data.zip && unzip data.zip && rm data.zip)"
+	${DOCKER_RUN} /bin/bash -c "test -f ${TRAIN_CSV} || (cd data && curl ${DOWNLOAD_URL} > data.zip && unzip data.zip && rm data.zip)"
 
 train:
-	docker run --rm -it -v ${CURDIR}:/app -w /app ${IMAGE} python3 main.py --mode ${TRAIN_MODE} --train-csv ${TRAIN_CSV} --model-dir ${MODEL_DIR}
+	${DOCKER_RUN} python3 main.py --mode ${TRAIN_MODE} --train-csv ${TRAIN_CSV} --model-dir ${MODEL_DIR}
 
 predict:
-	docker run --rm -it -v ${PWD}:/app -w /app ${IMAGE} python3 main.py --test-csv ${TEST_CSV} --prediction-csv ${PREDICTIONS_CSV} --model-dir ${MODEL_DIR}
+	${DOCKER_RUN} python3 main.py --test-csv ${TEST_CSV} --prediction-csv ${PREDICTIONS_CSV} --model-dir ${MODEL_DIR}
 
 score:
-	docker run --rm -it -v ${PWD}:/app -w /app ${IMAGE} python3 score.py
+	${DOCKER_RUN} python3 score.py
 
 docker-build:
 	${DOCKER_BUILD}
@@ -49,10 +50,10 @@ docker-push:
 	docker push ${IMAGE}
 
 run-bash:
-	docker run --rm -it -v ${PWD}:/app -w /app ${IMAGE} /bin/bash
+	${DOCKER_RUN} /bin/bash
 
 run-jupyter:
 	docker run --rm -it -v ${PWD}:/app -w /app -p 8888:8888 ${IMAGE} jupyter notebook --ip=0.0.0.0 --no-browser --allow-root  --NotebookApp.token='' --NotebookApp.password=''
 
 submission:
-	docker run --rm -it -v ${PWD}:/app -w /app ${IMAGE} /bin/bash -c "sed -i.bak 's~{image}~${IMAGE}~g' metadata.json && zip -9 -r submissions/${SUBMISSION_FILE} main.py lib/*.py metadata.json && mv metadata.json.bak metadata.json"
+	${DOCKER_RUN} /bin/bash -c "sed -i.bak 's~{image}~${IMAGE}~g' metadata.json && zip -9 -r submissions/${SUBMISSION_FILE} main.py lib/*.py metadata.json && mv metadata.json.bak metadata.json"
