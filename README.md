@@ -16,10 +16,11 @@
 
 ## Сборка своего Docker-образа
 
-1. Отредактировать [Makefile](https://github.com/tyz910/sdsj2018/blob/master/Makefile) и указать название образа на первой строчке `IMAGE=username/image`.  
-2. Отредактировать [Dockerfile](https://github.com/tyz910/sdsj2018/blob/master/Dockerfile).
-3. Запустить сборку образа `make docker-build`.
-4. Залить Docker-образ на Docker Hub `make docker-push`.
+1. Зарегистрироваться на [Docker Hub](https://hub.docker.com/).
+2. Отредактировать [Makefile](https://github.com/tyz910/sdsj2018/blob/master/Makefile) и указать название образа на первой строчке `IMAGE=username/image`.  
+3. Отредактировать [Dockerfile](https://github.com/tyz910/sdsj2018/blob/master/Dockerfile) и добавить установку нужных пакетов.
+4. Запустить сборку образа `make docker-build`.
+5. Залить Docker-образ на Docker Hub `make docker-push`.
 
 ## Запуск на Windows
 
