@@ -21,6 +21,7 @@
 3. Отредактировать [Dockerfile](https://github.com/tyz910/sdsj2018/blob/master/Dockerfile) и добавить установку нужных пакетов.
 4. Запустить сборку образа `make docker-build`.
 5. Залить Docker-образ на Docker Hub `make docker-push`.
+6. Убедиться, что созданный репозиторий публичный (Public), а не приватный (Private). Приватность настраивается по ссылке `https://hub.docker.com/r/username/image/~/settings/`.
 
 ## Запуск на Windows
 
