@@ -16,8 +16,8 @@
 
 ## Сборка своего Docker-образа
 
-1. Отредактировать `Makefile` и указать название образа на первой строчке `IMAGE=username/image`.  
-2. Отредактировать `Dockerfile`.
+1. Отредактировать [Makefile](https://github.com/tyz910/sdsj2018/blob/master/Makefile) и указать название образа на первой строчке `IMAGE=username/image`.  
+2. Отредактировать [Dockerfile](https://github.com/tyz910/sdsj2018/blob/master/Dockerfile).
 3. Запустить сборку образа `make docker-build`.
 4. Залить Docker-образ на Docker Hub `make docker-push`.
 
