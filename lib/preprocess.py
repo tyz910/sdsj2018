@@ -1,5 +1,7 @@
+import numpy as np
 import pandas as pd
 import datetime
+from sklearn.preprocessing import StandardScaler
 from lib.util import timeit, log
 from typing import Dict
 
@@ -73,7 +75,22 @@ def transform_categorical(df: pd.DataFrame, config: Dict):
     if "categorical_columns" not in config:
         config["categorical_columns"] = {}
         for c in [c for c in df if c.startswith("string_")]:
-            config["categorical_columns"][c] = {v: i for i, v in enumerate(df[c].value_counts().to_dict())}
+            counts = df[c].value_counts()
+            config["categorical_columns"][c] = pd.DataFrame({
+                "count": counts.values,
+                "category": np.arange(0, len(counts), dtype=config["float_type"])
+            }, index=counts.index)
 
     for c, values in config["categorical_columns"].items():
-        df.loc[:, c] = df[c].apply(lambda x: values[x] if x in values else -1)
+        df.loc[:, c] = df[c].apply(lambda x: values.loc[x, "category"] if x in values.index else config["float_type"](-1))
+
+
+@timeit
+def scale(df: pd.DataFrame, config: Dict):
+    scale_columns = [c for c in df if c.startswith("number_")]
+
+    if "scaler" not in config:
+        config["scaler"] = StandardScaler(copy=False)
+        config["scaler"].fit(df[scale_columns])
+
+    df[scale_columns] = config["scaler"].transform(df[scale_columns])

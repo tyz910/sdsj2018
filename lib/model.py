@@ -28,28 +28,25 @@ def validate(preds: pd.DataFrame, target_csv: str, mode: str) -> np.float64:
 @timeit
 def train_lightgbm(X: pd.DataFrame, y: pd.Series, config: Dict):
     params = {
-        'task': 'train',
-        'boosting_type': 'gbdt',
-        'objective': 'regression' if config["mode"] == 'regression' else 'binary',
-        'metric': 'rmse',
+        "objective": "regression" if config["mode"] == "regression" else "binary",
+        "metric": "rmse" if config["mode"] == "regression" else "auc",
         "learning_rate": 0.01,
         "num_leaves": 200,
         "feature_fraction": 0.70,
         "bagging_fraction": 0.70,
-        'bagging_freq': 4,
+        "bagging_freq": 4,
         "max_depth": -1,
-        "verbosity" : -1,
+        "verbosity": -1,
         "reg_alpha": 0.3,
         "reg_lambda": 0.1,
-        "min_child_weight":10,
-        'zero_as_missing':True,
-        'num_threads': 4,
-        'seed': 1,
+        "min_child_weight": 10,
+        "zero_as_missing": True,
+        "seed": 1,
     }
 
-    config['model'] = lgb.train(params, lgb.Dataset(X, label=y), 600)
+    config["model"] = lgb.train(params, lgb.Dataset(X, label=y), 600)
 
 
 @timeit
 def predict_lightgbm(X: pd.DataFrame, config: Dict) -> List:
-    return config['model'].predict(X)
+    return config["model"].predict(X)
