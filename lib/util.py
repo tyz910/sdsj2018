@@ -1,4 +1,6 @@
+import os
 import time
+import pickle
 from typing import Any
 
 nesting_level = 0
@@ -32,5 +34,43 @@ def timeit(method):
 
 def log(entry: Any):
     global nesting_level
-    space = " " * (4 * nesting_level)
+    space = "." * (4 * nesting_level)
     print("{}{}".format(space, entry))
+
+
+class Config:
+    def __init__(self, model_dir: str):
+        self.model_dir = model_dir
+        self.tmp_dir = model_dir
+        self.data = {
+            "start_time": time.time(),
+            "time_limit": int(os.environ.get("TIME_LIMIT", 5 * 60)),
+        }
+
+    def save(self):
+        with open(os.path.join(self.model_dir, "config.pkl"), "wb") as f:
+            pickle.dump(self.data, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def load(self):
+        with open(os.path.join(self.model_dir, "config.pkl"), "rb") as f:
+            data = pickle.load(f)
+
+        self.data = {**data, **self.data}
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __setitem__(self, key, value):
+        self.data[key] = value
+
+    def __delitem__(self, key):
+        del self.data[key]
+
+    def __contains__(self, key):
+        return key in self.data
+
+    def __len__(self):
+        return len(self.data)
+
+    def __repr__(self):
+        return repr(self.data)

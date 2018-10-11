@@ -1,9 +1,7 @@
 import os
-import time
-import pickle
 import pandas as pd
 import numpy as np
-from lib.util import timeit
+from lib.util import timeit, Config
 from lib.read import read_df
 from lib.preprocess import preprocess
 from lib.model import train, predict, validate
@@ -13,22 +11,25 @@ from typing import Optional
 class AutoML:
     def __init__(self, model_dir: str):
         os.makedirs(model_dir, exist_ok=True)
-        self.model_dir = model_dir
-        self.config = {
-            "start_time": time.time(),
-            "time_limit": int(os.environ.get("TIME_LIMIT", 5 * 60)),
-        }
+        self.config = Config(model_dir)
 
     def train(self, train_csv: str, mode: str):
-        self.config["mode"] = mode
+        self.config.data["mode"] = mode
+        self.config.tmp_dir = self.config.model_dir + "/tmp"
+        os.makedirs(self.config.tmp_dir, exist_ok=True)
 
-        X = read_df(train_csv, self.config)
-        y = X["target"]
+        df = read_df(train_csv, self.config)
+        preprocess(df, self.config)
 
-        preprocess(X, self.config)
+        y = df["target"]
+        X = df.drop("target", axis=1)
+
         train(X, y, self.config)
 
     def predict(self, test_csv: str, prediction_csv: str) -> (pd.DataFrame, Optional[np.float64]):
+        self.config.tmp_dir = os.path.dirname(prediction_csv) + "/tmp"
+        os.makedirs(self.config.tmp_dir, exist_ok=True)
+
         X = read_df(test_csv, self.config)
         result = X[["line_id"]].copy()
 
@@ -46,12 +47,8 @@ class AutoML:
 
     @timeit
     def save(self):
-        with open(os.path.join(self.model_dir, "config.pkl"), "wb") as f:
-            pickle.dump(self.config, f, protocol=pickle.HIGHEST_PROTOCOL)
+        self.config.save()
 
     @timeit
     def load(self):
-        with open(os.path.join(self.model_dir, "config.pkl"), "rb") as f:
-            config = pickle.load(f)
-
-        self.config = {**config, **self.config}
+        self.config.load()
