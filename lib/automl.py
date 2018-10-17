@@ -14,7 +14,8 @@ class AutoML:
         self.config = Config(model_dir)
 
     def train(self, train_csv: str, mode: str):
-        self.config.data["mode"] = mode
+        self.config["task"] = "train"
+        self.config["mode"] = mode
         self.config.tmp_dir = self.config.model_dir + "/tmp"
         os.makedirs(self.config.tmp_dir, exist_ok=True)
 
@@ -27,14 +28,28 @@ class AutoML:
         train(X, y, self.config)
 
     def predict(self, test_csv: str, prediction_csv: str) -> (pd.DataFrame, Optional[np.float64]):
+        self.config["task"] = "predict"
         self.config.tmp_dir = os.path.dirname(prediction_csv) + "/tmp"
         os.makedirs(self.config.tmp_dir, exist_ok=True)
 
-        X = read_df(test_csv, self.config)
-        result = X[["line_id"]].copy()
+        result = {
+            "line_id": [],
+            "prediction": [],
+        }
 
-        preprocess(X, self.config)
-        result["prediction"] = predict(X, self.config)
+        for X in pd.read_csv(
+                test_csv,
+                encoding="utf-8",
+                low_memory=False,
+                dtype=self.config["dtype"],
+                parse_dates=self.config["parse_dates"],
+                chunksize=self.config["nrows"]
+        ):
+            result["line_id"] += list(X["line_id"])
+            preprocess(X, self.config)
+            result["prediction"] += list(predict(X, self.config))
+
+        result = pd.DataFrame(result)
         result.to_csv(prediction_csv, index=False)
 
         target_csv = test_csv.replace("test", "test-target")

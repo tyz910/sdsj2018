@@ -47,6 +47,12 @@ class Config:
             "time_limit": int(os.environ.get("TIME_LIMIT", 5 * 60)),
         }
 
+    def is_train(self) -> bool:
+        return self["task"] == "train"
+
+    def time_left(self):
+        return self["time_limit"] - (time.time() - self["start_time"])
+
     def save(self):
         with open(os.path.join(self.model_dir, "config.pkl"), "wb") as f:
             pickle.dump(self.data, f, protocol=pickle.HIGHEST_PROTOCOL)

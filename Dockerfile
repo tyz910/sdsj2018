@@ -40,8 +40,19 @@ RUN apt-get update && \
     cd opt && git clone git://github.com/JohnLangford/vowpal_wabbit.git && cd vowpal_wabbit && make && make install && \
     cd python && python3 setup.py install
 
+# H2O AutoML
+RUN mkdir /tmp/h2o && cd /tmp/h2o && \
+    wget http://h2o-release.s3.amazonaws.com/h2o/rel-wright/9/h2o-3.20.0.9.zip && \
+    unzip -j h2o-3.20.0.9.zip && \
+    pip3 install h2o-3.20.0.9-py2.py3-none-any.whl && \
+    rm -rf /tmp/h2o
+
 # Python packages
 RUN pip3 install --no-cache-dir --upgrade \
     pandas \
     jupyter \
-    lightgbm
+    lightgbm \
+    catboost \
+    xgboost \
+    hyperopt \
+    Boruta

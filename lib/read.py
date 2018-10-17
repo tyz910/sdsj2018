@@ -1,9 +1,5 @@
 import pandas as pd
-import numpy as np
 from lib.util import timeit, log, Config
-
-F32_DATASET_SIZE = 500
-F16_DATASET_SIZE = 1000
 
 
 @timeit
@@ -31,29 +27,21 @@ def preview_df(train_csv: str, config: Config, nrows: int=3000):
     df_size = (num_rows * mem_per_row) / 1024 / 1024
     log("Approximate dataset size: {:0.2f} Mb".format(df_size))
 
-    if df_size >= F16_DATASET_SIZE:
-        float_type = np.float16
-    elif df_size >= F32_DATASET_SIZE:
-        float_type = np.float32
-    else:
-        float_type = np.float64
-
-    config["float_type"] = float_type
     config["parse_dates"] = []
     config["dtype"] = {
         "line_id": int,
     }
 
     counters = {
+        "id": 0,
         "number": 0,
         "string": 0,
         "datetime": 0,
     }
 
     for c in df:
-        if c.startswith("number_") or c.startswith("id_"):
+        if c.startswith("number_"):
             counters["number"] += 1
-            config["dtype"][c] = float_type
         elif c.startswith("string_"):
             counters["string"] += 1
             config["dtype"][c] = str
@@ -61,7 +49,11 @@ def preview_df(train_csv: str, config: Config, nrows: int=3000):
             counters["datetime"] += 1
             config["dtype"][c] = str
             config["parse_dates"].append(c)
+        elif c.startswith("id_"):
+            counters["id"] += 1
 
     log("Number columns: {}".format(counters["number"]))
     log("String columns: {}".format(counters["string"]))
     log("Datetime columns: {}".format(counters["datetime"]))
+
+    config["counters"] = counters
