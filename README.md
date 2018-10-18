@@ -2,6 +2,14 @@
 
 Для работы необходим `make` и `docker`. Перед началом работы нужно скачать датасет в папку `data`.
 
+## Особенности решения
+
+За основу взят LightGBM с гиперпараметрами от [vlarine](https://github.com/vlarine/sdsj2018_lightgbm_baseline).
+Добавлен Mean target Encoding для категориальных фич, нормализация числовых фич через StandardScaler, отбор фичей
+через [BorutaPy](https://github.com/scikit-learn-contrib/boruta_py).
+
+Так же есть, но не используются: Vowpal Wabbit, H2O AutoML, hyperopt.
+
 ## Make-команды для работы с Docker :whale:
 
 `make download` - cкачать датасет в папку data.  
