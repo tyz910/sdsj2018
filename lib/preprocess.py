@@ -21,6 +21,7 @@ def preprocess_pipeline(df: pd.DataFrame, config: Config):
     fillna(df, config)
     to_int8(df, config)
     time_series_detect(df, config)
+    non_negative_target_detect(df, config)
     subsample(df, config, max_size_mb=2 * 1024)
 
     transform_datetime(df, config)
@@ -161,6 +162,12 @@ def time_series_detect(df: pd.DataFrame, config: Config):
             config["time_series"] = True
         else:
             config["time_series"] = False
+
+
+@timeit
+def non_negative_target_detect(df: pd.DataFrame, config: Config):
+    if config.is_train():
+        config["non_negative_target"] = df["target"].lt(0).sum() == 0
 
 
 @timeit

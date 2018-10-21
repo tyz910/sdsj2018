@@ -50,6 +50,15 @@ class Config:
     def is_train(self) -> bool:
         return self["task"] == "train"
 
+    def is_test(self) -> bool:
+        return self["task"] == "test"
+
+    def is_regression(self) -> bool:
+        return self["mode"] == "regression"
+
+    def is_classification(self) -> bool:
+        return self["mode"] == "classification"
+
     def time_left(self):
         return self["time_limit"] - (time.time() - self["start_time"])
 

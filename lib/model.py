@@ -21,7 +21,11 @@ def train(X: pd.DataFrame, y: pd.Series, config: Config):
 
 @timeit
 def predict(X: pd.DataFrame, config: Config) -> List:
-    return predict_lightgbm(X, config)
+    preds = predict_lightgbm(X, config)
+    if config["non_negative_target"]:
+        preds = [max(0, p) for p in preds]
+
+    return preds
 
 
 @timeit
