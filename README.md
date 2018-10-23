@@ -6,7 +6,7 @@
 
 За основу взят LightGBM с гиперпараметрами от [vlarine](https://github.com/vlarine/sdsj2018_lightgbm_baseline).
 Добавлен Mean target Encoding для категориальных фич, нормализация числовых фич через StandardScaler, отбор фичей
-через [BorutaPy](https://github.com/scikit-learn-contrib/boruta_py).
+через [BorutaPy](https://github.com/scikit-learn-contrib/boruta_py). Добавлен поиск лика от [bagxi](https://github.com/bagxi/sdsj2018_lightgbm_baseline).
 
 Так же есть, но не используются: Vowpal Wabbit, H2O AutoML, hyperopt.
 
