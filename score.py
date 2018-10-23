@@ -5,23 +5,27 @@ from lib.automl import AutoML
 from lib.util import timeit, log
 
 DATASETS = [
-    ("1", "regression"),
-    ("2", "regression"),
-    ("3", "regression"),
-    ("4", "classification"),
-    ("5", "classification"),
-    ("6", "classification"),
-    ("7", "classification"),
-    ("8", "classification"),
+    ("1", "regression", 300),
+    ("2", "regression", 300),
+    ("3", "regression", 300),
+    ("4", "classification", 300),
+    ("5", "classification", 300),
+    ("6", "classification", 600),
+    ("7", "classification", 1800),
+    ("8", "classification", 1800),
 ]
 
 
 @timeit
-def validate_dataset(alias: str, mode: str) -> np.float64:
+def validate_dataset(alias: str, mode: str, train_limit: int) -> np.float64:
     log(alias)
 
     automl = AutoML("models/check_{}".format(alias))
+
+    automl.config["time_limit"] = train_limit
     automl.train("data/check_{}/train.csv".format(alias), mode)
+
+    automl.config["time_limit"] = 300
     _, score = automl.predict("data/check_{}/test.csv".format(alias), "predictions/check_{}.csv".format(alias))
 
     return score
@@ -34,11 +38,11 @@ if __name__ == '__main__':
         "time": [],
     }
 
-    for i, mode in DATASETS:
+    for i, mode, train_limit in DATASETS:
         alias = "{}_{}".format(i, mode[0])
 
         start_time = time.time()
-        score = validate_dataset(alias, mode)
+        score = validate_dataset(alias, mode, train_limit)
         end_time = time.time()
 
         scores["dataset"].append(alias)

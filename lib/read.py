@@ -7,7 +7,11 @@ def read_df(csv_path: str, config: Config) -> pd.DataFrame:
     if "dtype" not in config:
         preview_df(csv_path, config)
 
-    return pandas_read_csv(csv_path, config)
+    df = pandas_read_csv(csv_path, config)
+    if config.is_train():
+        config["nrows"] = len(df)
+
+    return df
 
 
 @timeit

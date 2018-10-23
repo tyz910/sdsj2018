@@ -17,10 +17,12 @@ def preprocess(df: pd.DataFrame, config: Config):
 
 
 def preprocess_pipeline(df: pd.DataFrame, config: Config):
+    if leak_detect(df, config):
+        return
+
     drop_columns(df, config)
     fillna(df, config)
     to_int8(df, config)
-    time_series_detect(df, config)
     non_negative_target_detect(df, config)
     subsample(df, config, max_size_mb=2 * 1024)
 
@@ -155,15 +157,6 @@ def subsample(df: pd.DataFrame, config: Config, max_size_mb: float=2.0):
             config["nrows"] = len(df)
 
 
-def time_series_detect(df: pd.DataFrame, config: Config):
-    if config.is_train():
-        if "datetime_0" in df or "id_0" in df:
-            #df.sort_values("datetime_0", inplace=True)
-            config["time_series"] = True
-        else:
-            config["time_series"] = False
-
-
 @timeit
 def non_negative_target_detect(df: pd.DataFrame, config: Config):
     if config.is_train():
@@ -221,3 +214,36 @@ def feature_selection(df: pd.DataFrame, config: Config):
     if "drop_datetime_columns" in config:
         log("Drop datetime columns: {}".format(config["drop_datetime_columns"]))
         df.drop(config["drop_datetime_columns"], axis=1, inplace=True)
+
+
+@timeit
+# https://github.com/bagxi/sdsj2018_lightgbm_baseline
+# https://forum-sdsj.datasouls.com/t/topic/304/3
+def leak_detect(df: pd.DataFrame, config: Config) -> bool:
+    if config.is_predict():
+        return "leak" in config
+
+    id_cols = [c for c in df if c.startswith('id_')]
+    dt_cols = [c for c in df if c.startswith('datetime_')]
+
+    if id_cols and dt_cols:
+        num_cols = [c for c in df if c.startswith('number_')]
+        for id_col in id_cols:
+            group = df.groupby(by=id_col).get_group(df[id_col].iloc[0])
+
+            for dt_col in dt_cols:
+                sorted_group = group.sort_values(dt_col)
+
+                for lag in range(-1, -10, -1):
+                    for col in num_cols:
+                        corr = sorted_group['target'].corr(sorted_group[col].shift(lag))
+                        if corr >= 0.99:
+                            config["leak"] = {
+                                "num_col": col,
+                                "lag": lag,
+                                "id_col": id_col,
+                                "dt_col": dt_col,
+                            }
+                            return True
+
+    return False

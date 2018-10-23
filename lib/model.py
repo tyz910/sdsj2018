@@ -11,14 +11,20 @@ from typing import List, Dict
 
 @timeit
 def train(X: pd.DataFrame, y: pd.Series, config: Config):
+    if "leak" in config:
+        return
+
     train_lightgbm(X, y, config)
 
 
 @timeit
 def predict(X: pd.DataFrame, config: Config) -> List:
-    preds = predict_lightgbm(X, config)
-    if config["non_negative_target"]:
-        preds = [max(0, p) for p in preds]
+    if "leak" in config:
+        preds = predict_leak(X, config)
+    else:
+        preds = predict_lightgbm(X, config)
+        if config["non_negative_target"]:
+            preds = [max(0, p) for p in preds]
 
     return preds
 
@@ -109,6 +115,16 @@ def hyperopt_lightgbm(X: pd.DataFrame, y: pd.Series, params: Dict, config: Confi
                         verbose=1)
 
     return space_eval(space, best)
+
+
+def predict_leak(X: pd.DataFrame, config: Config) -> List:
+    preds = pd.Series(0, index=X.index)
+
+    for name, group in X.groupby(by=config["leak"]["id_col"]):
+        gr = group.sort_values(config["leak"]["dt_col"])
+        preds.loc[gr.index] = gr[config["leak"]["num_col"]].shift(config["leak"]["lag"])
+
+    return preds.fillna(0).tolist()
 
 
 def ts_split(X: pd.DataFrame, y: pd.Series, test_size: float) -> (pd.DataFrame, pd.Series, pd.DataFrame, pd.Series):
