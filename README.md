@@ -4,11 +4,13 @@
 
 ## Особенности решения
 
-За основу взят LightGBM с гиперпараметрами от [vlarine](https://github.com/vlarine/sdsj2018_lightgbm_baseline).
-Добавлен Mean target Encoding для категориальных фич, нормализация числовых фич через StandardScaler, отбор фичей
-через [BorutaPy](https://github.com/scikit-learn-contrib/boruta_py). Добавлен поиск лика от [bagxi](https://github.com/bagxi/sdsj2018_lightgbm_baseline).
+* LightGBM с подбором гиперпараметров через hyperopt.
+* Mean target Encoding для категориальных фич.
+* Для 8-го датасета отбор фич через [BorutaPy](https://github.com/scikit-learn-contrib/boruta_py).
+* Лик от [bagxi](https://github.com/bagxi/sdsj2018_lightgbm_baseline).
 
-Так же есть, но не используются: Vowpal Wabbit, H2O AutoML, hyperopt.
+Так же есть, но не используются: Vowpal Wabbit, H2O AutoML.
+Скор на ЛБ: `5,30072`.
 
 ## Make-команды для работы с Docker :whale:
 

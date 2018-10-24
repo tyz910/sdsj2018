@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import lightgbm as lgb
 import hyperopt
-from hyperopt import hp, tpe, STATUS_OK, space_eval
+from hyperopt import hp, tpe, STATUS_OK, space_eval, Trials
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, roc_auc_score
 from lib.util import timeit, log, Config
@@ -39,39 +39,22 @@ def validate(preds: pd.DataFrame, target_csv: str, mode: str) -> np.float64:
 
 
 @timeit
-def train_lightgbm(X: pd.DataFrame, y: pd.Series, config: Config, use_hyperopt: bool=False):
+def train_lightgbm(X: pd.DataFrame, y: pd.Series, config: Config):
     params = {
         "objective": "regression" if config["mode"] == "regression" else "binary",
         "metric": "rmse" if config["mode"] == "regression" else "auc",
-        "learning_rate": 0.01,
         "verbosity": -1,
         "seed": 1,
     }
 
-    if use_hyperopt:
-        X_sample, y_sample = data_sample(X, y, config)
-        hyperparams = hyperopt_lightgbm(X_sample, y_sample, params, config)
+    X_sample, y_sample = data_sample(X, y)
+    hyperparams = hyperopt_lightgbm(X_sample, y_sample, params, config)
 
-        X_train, X_val, y_train, y_val = data_split(X, y, config)
-        train_data = lgb.Dataset(X_train, label=y_train)
-        valid_data = lgb.Dataset(X_val, label=y_val)
+    X_train, X_val, y_train, y_val = data_split(X, y)
+    train_data = lgb.Dataset(X_train, label=y_train)
+    valid_data = lgb.Dataset(X_val, label=y_val)
 
-        config["model"] = lgb.train({**params, **hyperparams, "early_stopping_round": 20}, train_data, 3000, valid_data)
-    else:
-        hyperparams = {
-            "num_leaves": 200,
-            "feature_fraction": 0.70,
-            "bagging_fraction": 0.70,
-            "bagging_freq": 4,
-            "max_depth": -1,
-            "reg_alpha": 0.3,
-            "reg_lambda": 0.1,
-            "min_child_weight": 10,
-            "zero_as_missing": True,
-        }
-
-        train_data = lgb.Dataset(X, label=y)
-        config["model"] = lgb.train({**params, **hyperparams}, train_data, 600)
+    config["model"] = lgb.train({**params, **hyperparams}, train_data, 3000, valid_data, early_stopping_rounds=50, verbose_eval=100)
 
 
 @timeit
@@ -81,7 +64,7 @@ def predict_lightgbm(X: pd.DataFrame, config: Config) -> List:
 
 @timeit
 def hyperopt_lightgbm(X: pd.DataFrame, y: pd.Series, params: Dict, config: Config):
-    X_train, X_val, y_train, y_val = data_split(X, y, config)
+    X_train, X_val, y_train, y_val = data_split(X, y, test_size=0.5)
     train_data = lgb.Dataset(X_train, label=y_train)
     valid_data = lgb.Dataset(X_val, label=y_val)
 
@@ -97,26 +80,26 @@ def hyperopt_lightgbm(X: pd.DataFrame, y: pd.Series, params: Dict, config: Confi
         "min_child_weight": hp.uniform('min_child_weight', 0.5, 10),
     }
 
-    def objective_score(model):
-        predict = model.predict(X_val)
-        return -roc_auc_score(y_val.values, predict) if config["mode"] == "classification" else \
-            np.sqrt(mean_squared_error(y_val.values, predict))
-
     def objective(hyperparams):
-        model = lgb.train({**params, **hyperparams, "early_stopping_round": 3}, train_data, 3000, valid_data)
-        score = objective_score(model)
+        model = lgb.train({**params, **hyperparams}, train_data, 300, valid_data,
+                          early_stopping_rounds=100, verbose_eval=100)
+
+        score = model.best_score["valid_0"][params["metric"]]
+        if config.is_classification():
+            score = -score
 
         return {'loss': score, 'status': STATUS_OK}
 
-    best = hyperopt.fmin(fn=objective,
-                        space=space,
-                        algo=tpe.suggest,
-                        max_evals=50,
-                        verbose=1)
+    trials = Trials()
+    best = hyperopt.fmin(fn=objective, space=space, trials=trials, algo=tpe.suggest, max_evals=50, verbose=1,
+                         rstate=np.random.RandomState(1))
 
-    return space_eval(space, best)
+    hyperparams = space_eval(space, best)
+    log("{:0.4f} {}".format(trials.best_trial['result']['loss'], hyperparams))
+    return hyperparams
 
 
+@timeit
 def predict_leak(X: pd.DataFrame, config: Config) -> List:
     preds = pd.Series(0, index=X.index)
 
@@ -127,26 +110,14 @@ def predict_leak(X: pd.DataFrame, config: Config) -> List:
     return preds.fillna(0).tolist()
 
 
-def ts_split(X: pd.DataFrame, y: pd.Series, test_size: float) -> (pd.DataFrame, pd.Series, pd.DataFrame, pd.Series):
-    test_len = int(len(X) * test_size)
-    return X[:-test_len], X[-test_len:], y[:-test_len], y[-test_len:]
+def data_split(X: pd.DataFrame, y: pd.Series, test_size: float=0.2) -> (pd.DataFrame, pd.Series, pd.DataFrame, pd.Series):
+    return train_test_split(X, y, test_size=test_size, random_state=1)
 
 
-def data_split(X: pd.DataFrame, y: pd.Series, config: Config, test_size: float=0.2) -> (pd.DataFrame, pd.Series, pd.DataFrame, pd.Series):
-    if config["time_series"]:
-        return ts_split(X, y, test_size=test_size)
-    else:
-        return train_test_split(X, y, test_size=test_size, random_state=1)
-
-
-def data_sample(X: pd.DataFrame, y: pd.Series, config: Config, nrows: int=5000) -> (pd.DataFrame, pd.Series):
+def data_sample(X: pd.DataFrame, y: pd.Series, nrows: int=5000) -> (pd.DataFrame, pd.Series):
     if len(X) > nrows:
-        if config["time_series"]:
-            X_sample = X.iloc[:nrows]
-            y_sample = y.iloc[:nrows]
-        else:
-            X_sample = X.sample(nrows)
-            y_sample = y[X_sample.index]
+        X_sample = X.sample(nrows, random_state=1)
+        y_sample = y[X_sample.index]
     else:
         X_sample = X
         y_sample = y

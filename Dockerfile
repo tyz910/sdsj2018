@@ -55,4 +55,5 @@ RUN pip3 install --no-cache-dir --upgrade \
     catboost \
     xgboost \
     hyperopt \
-    Boruta
+    Boruta \
+    category_encoders
