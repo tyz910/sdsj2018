@@ -2,7 +2,6 @@ IMAGE=tyz910/sdsj2018
 DOWNLOAD_URL=https://s3.eu-central-1.amazonaws.com/sdsj2018-automl/public/sdsj2018_automl_check_datasets.zip
 
 ifeq ($(OS), Windows_NT)
-	PWD=${CURDIR}
 	DOCKER_BUILD=docker build -t ${IMAGE} .
 else
 	DOCKER_BUILD=docker build -t ${IMAGE} . && (docker ps -q -f status=exited | xargs docker rm) && (docker images -qf dangling=true | xargs docker rmi) && docker images
@@ -30,7 +29,7 @@ TEST_CSV=data/check_${DATASET_NAME}/test.csv
 PREDICTIONS_CSV=predictions/check_${DATASET_NAME}.csv
 MODEL_DIR=models/check_${DATASET_NAME}
 
-DOCKER_RUN=docker run --rm -it -v ${PWD}:/app -w /app ${IMAGE}
+DOCKER_RUN=docker run --rm -it -v ${CURDIR}:/app -w /app ${IMAGE}
 
 download:
 	${DOCKER_RUN} /bin/bash -c "test -f ${TRAIN_CSV} || (cd data && curl ${DOWNLOAD_URL} > data.zip && unzip data.zip && rm data.zip)"
@@ -54,7 +53,7 @@ run-bash:
 	${DOCKER_RUN} /bin/bash
 
 run-jupyter:
-	docker run --rm -it -v ${PWD}:/app -w /app -p 8888:8888 ${IMAGE} jupyter notebook --ip=0.0.0.0 --no-browser --allow-root  --NotebookApp.token='' --NotebookApp.password=''
+	docker run --rm -it -v ${CURDIR}:/app -w /app -p 8888:8888 ${IMAGE} jupyter notebook --ip=0.0.0.0 --no-browser --allow-root  --NotebookApp.token='' --NotebookApp.password=''
 
 submission:
 	${DOCKER_RUN} /bin/bash -c "sed -i.bak 's~{image}~${IMAGE}~g' metadata.json && zip -9 -r submissions/submission_`date '+%Y%m%d_%H%M%S'`.zip main.py lib/*.py metadata.json && mv metadata.json.bak metadata.json"
