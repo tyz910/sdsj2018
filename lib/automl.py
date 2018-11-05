@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
-from lib.util import timeit, Config
+from lib.util import Config
 from lib.read import read_df
 from lib.preprocess import preprocess
 from lib.model import train, predict, validate
@@ -24,7 +24,6 @@ class AutoML:
 
         y = df["target"]
         X = df.drop("target", axis=1)
-
         train(X, y, self.config)
 
     def predict(self, test_csv: str, prediction_csv: str) -> (pd.DataFrame, Optional[np.float64]):
@@ -32,24 +31,22 @@ class AutoML:
         self.config.tmp_dir = os.path.dirname(prediction_csv) + "/tmp"
         os.makedirs(self.config.tmp_dir, exist_ok=True)
 
+        df = read_df(test_csv, self.config)
         result = {
-            "line_id": [],
+            "line_id": list(df["line_id"]),
             "prediction": [],
         }
 
-        for X in pd.read_csv(
-                test_csv,
-                encoding="utf-8",
-                low_memory=False,
-                dtype=self.config["dtype"],
-                parse_dates=self.config["parse_dates"],
-                chunksize=self.config["nrows"]
-        ):
-            result["line_id"] += list(X["line_id"])
+        def chunker(seq, size):
+            return (seq[pos:pos+size] for pos in range(0, len(seq), size))
+
+        for chunk in chunker(df, 100000):
+            X = chunk.copy()
             preprocess(X, self.config)
             result["prediction"] += list(predict(X, self.config))
 
         result = pd.DataFrame(result)
+        result.sort_values("line_id", inplace=True)
         result.to_csv(prediction_csv, index=False)
 
         target_csv = test_csv.replace("test", "test-target")
@@ -60,10 +57,8 @@ class AutoML:
 
         return result, score
 
-    @timeit
     def save(self):
         self.config.save()
 
-    @timeit
     def load(self):
         self.config.load()

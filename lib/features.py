@@ -22,21 +22,22 @@ class LGBMFeatureEstimator():
         self.feature_importances_ = model.feature_importance(importance_type="gain")
 
 
-def select_features(X: pd.DataFrame, y: pd.Series, mode: str, n_estimators: int=50, max_iter: int=100, perc: int=75) -> List[str]:
+def select_features(X: pd.DataFrame, y: pd.Series, mode: str, n_estimators: int=50, max_iter: int=50, perc: int=75) -> List[str]:
     feat_estimator = LGBMFeatureEstimator({
         "objective": "regression" if mode == "regression" else "binary",
         "metric": "rmse" if mode == "regression" else "auc",
         "learning_rate": 0.01,
         "verbosity": -1,
         "seed": 1,
-        "max_depth": -1,
+        "max_depth": 7,
+        "min_data_in_leaf": 3,
     }, n_estimators)
 
     feat_selector = BorutaPy(feat_estimator, n_estimators=n_estimators, max_iter=max_iter, verbose=2, random_state=1, perc=perc)
 
     try:
         feat_selector.fit(X.values, y.values.ravel())
-    except TypeError:
+    except:
         pass
 
     return X.columns[feat_selector.support_].tolist()

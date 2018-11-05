@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import time
 from lib.automl import AutoML
-from lib.util import timeit, log
+from lib.util import Log
 
 DATASETS = [
     ("1", "regression", 300),
@@ -16,9 +16,9 @@ DATASETS = [
 ]
 
 
-@timeit
+@Log.timeit
 def validate_dataset(alias: str, mode: str, train_limit: int) -> np.float64:
-    log(alias)
+    Log.print(alias)
 
     automl = AutoML("models/check_{}".format(alias))
 
@@ -26,6 +26,7 @@ def validate_dataset(alias: str, mode: str, train_limit: int) -> np.float64:
     automl.train("data/check_{}/train.csv".format(alias), mode)
 
     automl.config["time_limit"] = 300
+    automl.config["start_time"] = time.time()
     _, score = automl.predict("data/check_{}/test.csv".format(alias), "predictions/check_{}.csv".format(alias))
 
     return score
@@ -51,4 +52,4 @@ if __name__ == '__main__':
 
     scores = pd.DataFrame(scores)
     scores.to_csv("scores/{}.csv".format(int(time.time())))
-    print(scores)
+    Log.print(scores, nesting=False)

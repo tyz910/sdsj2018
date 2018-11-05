@@ -1,47 +1,61 @@
 import os
 import time
 import pickle
+import signal
+from contextlib import contextmanager
 from typing import Any
 
-nesting_level = 0
-is_start = None
 
+class Log:
+    nesting_level = 0
+    is_silent = False
+    is_method_start = None
 
-def timeit(method):
-    def timed(*args, **kw):
-        global is_start
-        global nesting_level
+    @staticmethod
+    def silent(silent: bool):
+        Log.is_silent = silent
 
-        if not is_start:
-            print()
+    @staticmethod
+    def print(entry: Any="", nesting: bool=True):
+        if Log.is_silent:
+            return
 
-        is_start = True
-        log("Start {}.".format(method.__name__))
-        nesting_level += 1
+        space = "." * (4 * Log.nesting_level) if nesting else ""
+        print("{}{}".format(space, entry))
 
-        start_time = time.time()
-        result = method(*args, **kw)
-        end_time = time.time()
+    @staticmethod
+    def nest(n: int):
+        Log.nesting_level += n
 
-        nesting_level -= 1
-        log("End {}. Time: {:0.2f} sec.".format(method.__name__, end_time - start_time))
-        is_start = False
+    @staticmethod
+    def timeit(method):
+        def timed(*args, **kw):
+            if not Log.is_method_start:
+                Log.print(nesting=False)
 
-        return result
+            Log.is_method_start = True
+            Log.print("Start {}.".format(method.__name__))
+            Log.nest(1)
 
-    return timed
+            start_time = time.time()
+            result = method(*args, **kw)
+            end_time = time.time()
 
+            Log.nest(-1)
+            Log.print("End {}. Time: {:0.2f} sec.".format(method.__name__, end_time - start_time))
+            Log.is_method_start = False
 
-def log(entry: Any):
-    global nesting_level
-    space = "." * (4 * nesting_level)
-    print("{}{}".format(space, entry))
+            return result
+
+        return timed
 
 
 class Config:
     def __init__(self, model_dir: str):
         self.model_dir = model_dir
         self.tmp_dir = model_dir
+        self.current_time_limit = 0
+        self.current_time_limit_start = 0
         self.data = {
             "start_time": time.time(),
             "time_limit": int(os.environ.get("TIME_LIMIT", 5 * 60)),
@@ -59,7 +73,14 @@ class Config:
     def is_classification(self) -> bool:
         return self["mode"] == "classification"
 
-    def time_left(self):
+    def limit_time_fraction(self, fraction: float=0.1):
+        self.current_time_limit = int(self["time_limit"] * fraction)
+        self.current_time_limit_start = self.time_left()
+
+    def is_time_fraction_limit(self) -> bool:
+        return self.current_time_limit_start - self.time_left() >= self.current_time_limit
+
+    def time_left(self) -> float:
         return self["time_limit"] - (time.time() - self["start_time"])
 
     def save(self):
@@ -89,3 +110,19 @@ class Config:
 
     def __repr__(self):
         return repr(self.data)
+
+
+class TimeoutException(Exception): pass
+
+
+@contextmanager
+def time_limit(seconds):
+    seconds = int(seconds)
+    def signal_handler(signum, frame):
+        raise TimeoutException("Timed out!")
+    signal.signal(signal.SIGALRM, signal_handler)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)

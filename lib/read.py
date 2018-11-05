@@ -1,35 +1,36 @@
 import pandas as pd
-from lib.util import timeit, log, Config
+from lib.util import Log, Config
 
 
-@timeit
+@Log.timeit
 def read_df(csv_path: str, config: Config) -> pd.DataFrame:
     if "dtype" not in config:
         preview_df(csv_path, config)
 
     df = pandas_read_csv(csv_path, config)
-    if config.is_train():
-        config["nrows"] = len(df)
+
+    if "sort_values" in config:
+        df.sort_values(config["sort_values"], inplace=True)
 
     return df
 
 
-@timeit
+@Log.timeit
 def pandas_read_csv(csv_path: str, config: Config) -> pd.DataFrame:
     return pd.read_csv(csv_path, encoding="utf-8", low_memory=False, dtype=config["dtype"], parse_dates=config["parse_dates"])
 
 
-@timeit
+@Log.timeit
 def preview_df(train_csv: str, config: Config, nrows: int=3000):
     num_rows = sum(1 for line in open(train_csv)) - 1
-    log("Rows in train: {}".format(num_rows))
+    Log.print("Rows in train: {}".format(num_rows))
 
     df = pd.read_csv(train_csv, encoding="utf-8", low_memory=False, nrows=nrows)
     mem_per_row = df.memory_usage(deep=True).sum() / nrows
-    log("Memory per row: {:0.2f} Kb".format(mem_per_row / 1024))
+    Log.print("Memory per row: {:0.2f} Kb".format(mem_per_row / 1024))
 
     df_size = (num_rows * mem_per_row) / 1024 / 1024
-    log("Approximate dataset size: {:0.2f} Mb".format(df_size))
+    Log.print("Approximate dataset size: {:0.2f} Mb".format(df_size))
 
     config["parse_dates"] = []
     config["dtype"] = {
@@ -56,8 +57,8 @@ def preview_df(train_csv: str, config: Config, nrows: int=3000):
         elif c.startswith("id_"):
             counters["id"] += 1
 
-    log("Number columns: {}".format(counters["number"]))
-    log("String columns: {}".format(counters["string"]))
-    log("Datetime columns: {}".format(counters["datetime"]))
+    Log.print("Number columns: {}".format(counters["number"]))
+    Log.print("String columns: {}".format(counters["string"]))
+    Log.print("Datetime columns: {}".format(counters["datetime"]))
 
     config["counters"] = counters

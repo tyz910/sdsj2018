@@ -56,4 +56,5 @@ RUN pip3 install --no-cache-dir --upgrade \
     xgboost \
     hyperopt \
     Boruta \
-    category_encoders
+    category_encoders \
+    memory_profiler

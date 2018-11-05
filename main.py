@@ -1,9 +1,9 @@
 import argparse
-from lib.util import timeit
+from lib.util import Log
 from lib.automl import AutoML
 
 
-@timeit
+@Log.timeit
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=['classification', 'regression'])
